@@ -9,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -20,28 +19,38 @@ jobs:
       - run: echo 'DEV_DATABASE_URL=${{secrets.PG_CONN}}' >> .env
       - run: cat .env
 
+      # Limpiar el caché de npm antes de instalar dependencias
       - run: npm cache clean --force
 
+      # Instalar dependencias sin usar el caché
       - run: npm install --no-cache
 
+      # Instalar sequelize-cli globalmente
       - run: npm install -g sequelize-cli
 
+      # Ejecutar migraciones
       - run: sequelize db:migrate
 
+      # Construir la imagen Docker
       - run: docker build -t josealan2119/api-mysql-laptops:${{github.sha}} .
 
+      # Mostrar las imágenes construidas
       - run: docker images
 
-      - run: docker run --name api-mysql -p 8085:8085 -d josealan2119/api-mysql-laptops:${{github.sha}} 
+      # Ejecutar el contenedor de la API
+      - run: docker run --name api-mysql-LA -p 8085:8085 -d josealan2119/api-mysql-laptops:${{github.sha}} 
 
+      # Verificar el estado del contenedor
       - run: docker ps
-      - run: docker exec api-mysql ls -la
+      - run: docker exec api-mysql-LA ls -la
 
+      # Login en Docker
       - name: docker login
         env:
           DOCKER_USER: ${{secrets.DOCKER_USER}}
           DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
         run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
 
+      # Push de la imagen a Docker Hub
       - name: docker push
         run: docker push ${{ secrets.DOCKER_USER}}/api-mysql-laptops:${{github.sha}}
