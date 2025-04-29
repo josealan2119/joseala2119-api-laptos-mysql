@@ -9,24 +9,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - run: echo 'hello world ...'
       - run: ls -la
       - run: touch .env
       - run: echo 'DEV_DATABASE_URL=${{secrets.PG_CONN}}' >> .env
       - run: cat .env
 
-      # Si necesitas instalar dependencias o hacer migraciones
-      - run: npm install
+      - run: npm cache clean --force
+
+      - run: npm install --no-cache
+
       - run: npm install -g sequelize-cli
+
       - run: sequelize db:migrate
 
-      - run: docker build -t josealan2119/api-mysql-laptop:${{github.sha}} .
+      - run: docker build -t josealan2119/api-mysql-laptops:${{github.sha}} .
+
       - run: docker images
 
-      - run: docker run --name api-mysql -p 8085:8085 -d josealan2119/api-mysql-laptop:${{github.sha}} 
+      - run: docker run --name api-mysql -p 8085:8085 -d josealan2119/api-mysql-laptops:${{github.sha}} 
+
       - run: docker ps
       - run: docker exec api-mysql ls -la
 
